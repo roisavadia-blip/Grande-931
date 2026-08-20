@@ -3,60 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול מלאי רימונים</title>
-  <!-- Tailwind CSS לקבלת עיצוב מודרני ומהיר -->
+  <title>ניהול מלאי רימונים בבונקר</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
-    body { background-color: #0b132b; color: #ffffff; font-family: system-ui, -apple-system, sans-serif; }
-    .card { background-color: #1c2541; border: 1px solid #2a385b; }
-    .btn-primary { background-color: #3a506b; hover:background-color: #486581; }
+    body { 
+      background-color: #0b132b; 
+      color: #ffffff; 
+      font-family: system-ui, -apple-system, sans-serif;
+      background-attachment: fixed;
+    }
+    .card { background-color: rgba(28, 37, 65, 0.9); border: 1px solid #2a385b; backdrop-filter: blur(8px); }
   </style>
 </head>
-<body class="p-4 max-w-3xl mx-auto pb-12">
+<body class="p-4 max-w-4xl mx-auto pb-12">
 
   <!-- כותרת ראשית -->
   <header class="text-center mb-6 border-b border-gray-700 pb-4">
-    <h1 class="text-2xl font-bold text-blue-400">ניהול מלאי רימונים</h1>
-    <p class="text-xs text-gray-400 mt-1">מסונכרן בזמן אמת (Firebase) - כל מכשיר רואה ומעדכן</p>
+    <h1 class="text-2xl font-bold text-blue-400">ניהול מלאי רימונים בבונקר</h1>
+    <p class="text-xs text-green-400 mt-1">● מחובר לענן (Firebase) - סנכרון בזמן אמת</p>
     
-    <!-- ניווט בין מסכים -->
     <div class="flex justify-center gap-4 mt-4">
-      <button onclick="switchTab('dashboard')" class="bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm">דו"ח מרוכז</button>
-      <button onclick="switchTab('teams')" class="bg-gray-700 px-4 py-2 rounded-lg font-bold text-sm">צוותים</button>
+      <button id="btn-dashboard" onclick="switchTab('dashboard')" class="bg-blue-600 px-5 py-2 rounded-lg font-bold text-sm">דו"ח מרוכז</button>
+      <button id="btn-teams" onclick="switchTab('teams')" class="bg-gray-700 px-5 py-2 rounded-lg font-bold text-sm">צוותים</button>
     </div>
   </header>
 
   <!-- מסך 1: דו"ח מרוכז -->
   <div id="tab-dashboard">
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="card p-4 rounded-xl text-center">
-        <span class="text-gray-400 text-xs block mb-1">סך רימונים מאופסים</span>
-        <span id="stat-zeroed" class="text-3xl font-extrabold text-green-400">0</span>
+    <div class="grid grid-cols-3 gap-3 mb-6">
+      <div class="card p-3 rounded-xl text-center">
+        <span class="text-gray-400 text-xs block mb-1">מספרי סדרה שונים</span>
+        <span id="stat-series-count" class="text-2xl font-extrabold text-blue-300">0</span>
       </div>
-      <div class="card p-4 rounded-xl text-center">
+      <div class="card p-3 rounded-xl text-center">
+        <span class="text-gray-400 text-xs block mb-1">סך רימונים מאופסנים</span>
+        <span id="stat-zeroed" class="text-2xl font-extrabold text-green-400">0</span>
+      </div>
+      <div class="card p-3 rounded-xl text-center">
         <span class="text-gray-400 text-xs block mb-1">סך רימונים רשומים</span>
-        <span id="stat-total" class="text-3xl font-extrabold text-blue-400">0</span>
+        <span id="stat-total" class="text-2xl font-extrabold text-white">0</span>
       </div>
     </div>
 
     <div class="card p-4 rounded-xl">
-      <h2 class="text-sm font-bold mb-3 border-b border-gray-700 pb-2">כמות מאופסת לכל מספר סדרה לפי צוותים</h2>
+      <h2 class="text-sm font-bold mb-3 text-center border-b border-gray-700 pb-2">כמות מאופסנת לכל מספר סדרה - סה"כ ולפי צוותים</h2>
       <div class="overflow-x-auto">
-        <table class="w-full text-right text-xs">
+        <table class="w-full text-center text-xs">
           <thead>
-            <tr class="border-b border-gray-600 text-gray-400">
-              <th class="p-2">מספר סדרה</th>
-              <th class="p-2">חפ"ק</th>
-              <th class="p-2">חוד</th>
-              <th class="p-2">פיקודית</th>
-              <th class="p-2">רותק</th>
+            <tr id="matrix-header" class="border-b border-gray-600 text-gray-400">
+              <th class="p-2 text-right">מספר סדרה</th>
+              <!-- שמות הצוותים יוזנו דינמית -->
             </tr>
           </thead>
           <tbody id="matrix-body">
-            <!-- נתונים יוזרמו לכאן אוטומטית -->
+            <!-- נתוני הסדרות יוזרמו לכאן -->
           </tbody>
         </table>
       </div>
@@ -65,36 +67,30 @@
 
   <!-- מסך 2: רשימת צוותים -->
   <div id="tab-teams" class="hidden">
-    <div class="flex gap-2 mb-4">
-      <input type="text" id="new-team-name" placeholder="שם צוות חדש..." class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm flex-1">
-      <button onclick="addTeam()" class="bg-blue-600 px-4 py-2 rounded-lg text-sm font-bold">+</button>
+    <div class="card p-3 rounded-xl mb-4 flex gap-2">
+      <input type="text" id="new-team-name" placeholder="שם צוות נוסף (למשל: רתק, חוד)..." class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm flex-1">
+      <button onclick="addTeam()" class="bg-blue-600 px-4 py-2 rounded-lg text-sm font-bold">הוסף צוות</button>
     </div>
 
-    <div id="teams-list" class="space-y-3">
-      <!-- רשימת הצוותים תוצג כאן -->
-    </div>
+    <div id="teams-list" class="space-y-3"></div>
   </div>
 
   <!-- מסך 3: ניהול צוות ספציפי -->
   <div id="tab-single-team" class="hidden">
     <button onclick="switchTab('teams')" class="text-xs text-blue-400 mb-3 block">← חזרה לכל הצוותים</button>
-    <h2 id="current-team-title" class="text-xl font-bold mb-4 border-b border-gray-700 pb-2"></h2>
-
-    <div class="card p-4 rounded-xl mb-4">
-      <h3 class="text-sm font-bold mb-2">הוספת חייל</h3>
-      <div class="flex gap-2">
-        <input type="text" id="new-soldier-name" placeholder="שם החייל" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm flex-1">
-        <button onclick="addSoldier()" class="bg-green-600 px-4 py-2 rounded-lg text-sm font-bold">הוסף</button>
-      </div>
+    <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+      <h2 id="current-team-title" class="text-xl font-bold"></h2>
     </div>
 
-    <div id="soldiers-list" class="space-y-4">
-      <!-- חיילים ורימונים יוזנו כאן -->
+    <div class="card p-3 rounded-xl mb-4 flex gap-2">
+      <input type="text" id="new-soldier-name" placeholder="שם חייל חדש..." class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm flex-1">
+      <button onclick="addSoldier()" class="bg-green-600 px-4 py-2 rounded-lg text-sm font-bold">הוסף חייל</button>
     </div>
+
+    <div id="soldiers-list" class="space-y-4"></div>
   </div>
 
   <script>
-    // הגדרות Firebase - יש להחליף את ה-Config הזה בפרטים מהפרויקט שלך ב-Firebase
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -107,19 +103,19 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     let currentTeamId = null;
 
-    // ניווט בלשוניות
     function switchTab(tabName) {
       document.getElementById('tab-dashboard').classList.add('hidden');
       document.getElementById('tab-teams').classList.add('hidden');
       document.getElementById('tab-single-team').classList.add('hidden');
-
+      
       document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.getElementById('btn-dashboard').className = tabName === 'dashboard' ? 'bg-blue-600 px-5 py-2 rounded-lg font-bold text-sm' : 'bg-gray-700 px-5 py-2 rounded-lg font-bold text-sm';
+      document.getElementById('btn-teams').className = tabName !== 'dashboard' ? 'bg-blue-600 px-5 py-2 rounded-lg font-bold text-sm' : 'bg-gray-700 px-5 py-2 rounded-lg font-bold text-sm';
     }
 
-    // סנכרון נתונים בזמן אמת מול Firebase
     db.ref('inventory').on('value', (snapshot) => {
       const data = snapshot.val() || {};
       renderDashboard(data);
@@ -127,7 +123,6 @@
       if (currentTeamId) renderSingleTeam(data, currentTeamId);
     });
 
-    // הוספת צוות
     function addTeam() {
       const name = document.getElementById('new-team-name').value.trim();
       if (!name) return;
@@ -136,30 +131,30 @@
       document.getElementById('new-team-name').value = '';
     }
 
-    // הוספת חייל
     function addSoldier() {
       const name = document.getElementById('new-soldier-name').value.trim();
       if (!name || !currentTeamId) return;
       const soldierId = db.ref(`inventory/${currentTeamId}/soldiers`).push().key;
-      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}`).set({
-        name: name,
-        grenades: [{ id: 1, serial: '', number: '', isZeroed: false }]
-      });
+      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}`).set({ name: name, grenades: [] });
       document.getElementById('new-soldier-name').value = '';
     }
 
-    // הוספת רימון לחייל
-    function addGrenade(soldierId, currentGrenades = []) {
-      const updated = [...currentGrenades, { id: Date.now(), serial: '', number: '', isZeroed: false }];
-      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}/grenades`).set(updated);
+    function addGrenade(soldierId) {
+      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}/grenades`).push({
+        serial: '',
+        number: '',
+        isZeroed: false
+      });
     }
 
-    // עדכון פרטי רימון
-    function updateGrenade(soldierId, gIndex, field, value) {
-      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}/grenades/${gIndex}/${field}`).set(value);
+    function updateGrenade(soldierId, grenadeId, field, value) {
+      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}/grenades/${grenadeId}/${field}`).set(value);
     }
 
-    // הצגת רשימת צוותים
+    function deleteGrenade(soldierId, grenadeId) {
+      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}/grenades/${grenadeId}`).remove();
+    }
+
     function renderTeams(data) {
       const list = document.getElementById('teams-list');
       list.innerHTML = '';
@@ -167,36 +162,35 @@
         const team = data[teamId];
         const soldiers = team.soldiers ? Object.values(team.soldiers) : [];
         let totalZeroed = 0;
+        
         soldiers.forEach(s => {
-          (s.grenades || []).forEach(g => { if (g.isZeroed) totalZeroed++; });
+          if (s.grenades) {
+            Object.values(s.grenades).forEach(g => { if (g.isZeroed) totalZeroed++; });
+          }
         });
 
         list.innerHTML += `
           <div class="card p-4 rounded-xl flex justify-between items-center">
             <div>
               <h3 class="font-bold text-lg">${team.name}</h3>
-              <p class="text-xs text-gray-400">${soldiers.length} חיילים · ${totalZeroed} רימונים מאופסים</p>
+              <p class="text-xs text-gray-400">${soldiers.length} חיילים · ${totalZeroed} רימונים מאופסנים</p>
             </div>
-            <button onclick="openTeam('${teamId}')" class="bg-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold">כניסה לצוות</button>
+            <button onclick="openTeam('${teamId}')" class="bg-blue-600 px-4 py-2 rounded-lg text-xs font-bold">כניסה לצוות</button>
           </div>
         `;
       });
     }
 
-    // פתיחת צוות ספציפי
     function openTeam(teamId) {
       currentTeamId = teamId;
       switchTab('single-team');
-      db.ref('inventory').once('value', snapshot => {
-        renderSingleTeam(snapshot.val(), teamId);
-      });
+      db.ref('inventory').once('value', snapshot => renderSingleTeam(snapshot.val(), teamId));
     }
 
-    // הצגת חיילי צוות
     function renderSingleTeam(data, teamId) {
       const team = data[teamId];
       if (!team) return;
-      document.getElementById('current-team-title').innerText = team.name;
+      document.getElementById('current-team-title').innerText = `צוות ${team.name}`;
 
       const list = document.getElementById('soldiers-list');
       list.innerHTML = '';
@@ -204,48 +198,60 @@
       const soldiers = team.soldiers || {};
       Object.keys(soldiers).forEach(sId => {
         const soldier = soldiers[sId];
-        const grenades = soldier.grenades || [];
+        const grenades = soldier.grenades || {};
 
-        let grenadesHTML = grenades.map((g, idx) => `
-          <div class="bg-gray-800 p-2 rounded-lg mt-2 border border-gray-700 text-xs space-y-2">
-            <div class="flex gap-2">
-              <input type="text" placeholder="סדרה (למשל 4-21)" value="${g.serial || ''}" 
-                onchange="updateGrenade('${sId}', ${idx}, 'serial', this.value)" class="bg-gray-900 p-1.5 rounded border border-gray-700 w-1/2">
-              <input type="text" placeholder="מס' רימון" value="${g.number || ''}" 
-                onchange="updateGrenade('${sId}', ${idx}, 'number', this.value)" class="bg-gray-900 p-1.5 rounded border border-gray-700 w-1/2">
+        let grenadesHTML = '';
+        let count = 1;
+        Object.keys(grenades).forEach(gId => {
+          const g = grenades[gId];
+          grenadesHTML += `
+            <div class="bg-gray-800 p-2.5 rounded-lg border border-gray-700 text-xs space-y-2 mt-2">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-400 font-bold">רימון ${count++}</span>
+                <button onclick="deleteGrenade('${sId}', '${gId}')" class="text-red-400 text-xs">מחק</button>
+              </div>
+              <div class="flex gap-2">
+                <input type="text" placeholder="סדרה (למשל 4-21)" value="${g.serial || ''}" 
+                  onchange="updateGrenade('${sId}', '${gId}', 'serial', this.value)" class="bg-gray-900 p-2 rounded border border-gray-700 w-1/2 text-center">
+                <input type="text" placeholder="מס' רימון" value="${g.number || ''}" 
+                  onchange="updateGrenade('${sId}', '${gId}', 'number', this.value)" class="bg-gray-900 p-2 rounded border border-gray-700 w-1/2 text-center">
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer pt-1">
+                <input type="checkbox" ${g.isZeroed ? 'checked' : ''} 
+                  onchange="updateGrenade('${sId}', '${gId}', 'isZeroed', this.checked)" class="w-4 h-4 text-blue-600 rounded">
+                <span class="${g.isZeroed ? 'text-green-400 font-bold' : 'text-gray-300'}">מאופסן</span>
+              </label>
             </div>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" ${g.isZeroed ? 'checked' : ''} 
-                onchange="updateGrenade('${sId}', ${idx}, 'isZeroed', this.checked)" class="w-4 h-4 text-blue-600 rounded">
-              <span>מאופס</span>
-            </label>
-          </div>
-        `).join('');
+          `;
+        });
 
         list.innerHTML += `
           <div class="card p-3 rounded-xl">
-            <h4 class="font-bold text-sm mb-1">${soldier.name}</h4>
+            <h4 class="font-bold text-sm border-b border-gray-700 pb-1 mb-2">${soldier.name}</h4>
             ${grenadesHTML}
-            <button onclick='addGrenade("${sId}", ${JSON.stringify(grenades)})' class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-xs py-1.5 rounded-lg">+ הוסף רימון</button>
+            <button onclick="addGrenade('${sId}')" class="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-xs py-2 rounded-lg font-bold">+ הוסף רימון</button>
           </div>
         `;
       });
     }
 
-    // חישוב ועדכון ה-Dashboard
     function renderDashboard(data) {
-      let total = 0;
-      let zeroed = 0;
-      let seriesMap = {}; // { "4-21": { "צוות א": 2 } }
+      let totalRegistered = 0;
+      let totalZeroed = 0;
+      let seriesMap = {}; 
+      let teamNames = [];
 
       Object.values(data).forEach(team => {
+        if (!teamNames.includes(team.name)) teamNames.push(team.name);
         if (!team.soldiers) return;
+
         Object.values(team.soldiers).forEach(s => {
-          (s.grenades || []).forEach(g => {
+          if (!s.grenades) return;
+          Object.values(s.grenades).forEach(g => {
             if (g.serial) {
-              total++;
+              totalRegistered++;
               if (g.isZeroed) {
-                zeroed++;
+                totalZeroed++;
                 if (!seriesMap[g.serial]) seriesMap[g.serial] = {};
                 seriesMap[g.serial][team.name] = (seriesMap[g.serial][team.name] || 0) + 1;
               }
@@ -254,22 +260,28 @@
         });
       });
 
-      document.getElementById('stat-total').innerText = total;
-      document.getElementById('stat-zeroed').innerText = zeroed;
+      document.getElementById('stat-total').innerText = totalRegistered;
+      document.getElementById('stat-zeroed').innerText = totalZeroed;
+      document.getElementById('stat-series-count').innerText = Object.keys(seriesMap).length;
 
-      // טבלה
+      // בניית כותרות הטבלה
+      const header = document.getElementById('matrix-header');
+      header.innerHTML = '<th class="p-2 text-right">מספר סדרה</th>';
+      teamNames.forEach(name => {
+        header.innerHTML += `<th class="p-2">${name}</th>`;
+      });
+
+      // בניית שורות הטבלה
       const tbody = document.getElementById('matrix-body');
       tbody.innerHTML = '';
       Object.keys(seriesMap).forEach(serial => {
-        tbody.innerHTML += `
-          <tr class="border-b border-gray-700">
-            <td class="p-2 font-bold">${serial}</td>
-            <td class="p-2">${seriesMap[serial]['חפ"ק'] || '-'}</td>
-            <td class="p-2">${seriesMap[serial]['חוד'] || '-'}</td>
-            <td class="p-2">${seriesMap[serial]['פיקודית'] || '-'}</td>
-            <td class="p-2">${seriesMap[serial]['רותק'] || '-'}</td>
-          </tr>
-        `;
+        let rowHTML = `<tr class="border-b border-gray-700"><td class="p-2 font-bold text-right">${serial}</td>`;
+        teamNames.forEach(name => {
+          const count = seriesMap[serial][name] || '-';
+          rowHTML += `<td class="p-2 ${count !== '-' ? 'text-green-400 font-bold' : 'text-gray-500'}">${count}</td>`;
+        });
+        rowHTML += '</tr>';
+        tbody.innerHTML += rowHTML;
       });
     }
   </script>
