@@ -3,27 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מבצעית 931</title>
+  <title>מבצעית 931 - ניהול מלאי רימונים</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
     body { 
       background-color: #0b132b; 
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
       color: #ffffff; 
       font-family: system-ui, -apple-system, sans-serif;
-      background-attachment: fixed;
     }
-    .card { background-color: rgba(28, 37, 65, 0.9); border: 1px solid #2a385b; backdrop-filter: blur(8px); }
+    .card { background-color: rgba(28, 37, 65, 0.85); border: 1px solid #2a385b; backdrop-filter: blur(8px); }
   </style>
 </head>
-<body class="p-4 max-w-4xl mx-auto pb-12">
+<body id="main-body" class="p-4 max-w-4xl mx-auto pb-12">
 
   <!-- כותרת ראשית -->
   <header class="text-center mb-6 border-b border-gray-700 pb-4">
-    <h1 class="text-2xl font-bold text-blue-400">ניהול מלאי רימונים בבונקר</h1>
+    <h1 class="text-2xl font-bold text-blue-400">מבצעית 931</h1>
     <p class="text-xs text-green-400 mt-1">● מחובר לענן (Firebase) - סנכרון בזמן אמת</p>
     
+    <!-- כפתור לבחירת תמונה מהטלפון -->
+    <div class="mt-3">
+      <label class="bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 px-3 py-1.5 rounded-lg border border-gray-600 cursor-pointer inline-block">
+        📷 בחר תמונת רקע מהטלפון
+        <input type="file" id="bg-uploader" accept="image/*" class="hidden" onchange="changeBackground(event)">
+      </label>
+    </div>
+
     <div class="flex justify-center gap-4 mt-4">
       <button id="btn-dashboard" onclick="switchTab('dashboard')" class="bg-blue-600 px-5 py-2 rounded-lg font-bold text-sm">דו"ח מרוכז</button>
       <button id="btn-teams" onclick="switchTab('teams')" class="bg-gray-700 px-5 py-2 rounded-lg font-bold text-sm">צוותים</button>
@@ -92,17 +103,38 @@
   </div>
 
   <script>
-    // הַחְלֵף אֶת הַקֶּטַע הַבָּא בַּמַּפְתְּחוֹת שֶׁלְּךָ מִ-FIREBASE:
+    // פונקציה להחלפת הרקע מהמכשיר ושמירתו ב-LocalStorage להתקן המקומי
+    function changeBackground(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const bgData = e.target.result;
+          document.body.style.backgroundImage = `linear-gradient(rgba(11, 19, 43, 0.85), rgba(11, 19, 43, 0.85)), url('${bgData}')`;
+          localStorage.setItem('customBackground', bgData);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // טעינת תמונת הרקע השמורה אם קיימת בדפדפן
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedBg = localStorage.getItem('customBackground');
+      if (savedBg) {
+        document.body.style.backgroundImage = `linear-gradient(rgba(11, 19, 43, 0.85), rgba(11, 19, 43, 0.85)), url('${savedBg}')`;
+      }
+    });
+
     const firebaseConfig = {
-  apiKey: "AIzaSyA2Fa08VxXozP-fAYOBJhkzWA-qOL6VYBU",
-  authDomain: "grande-815a1.firebaseapp.com",
-  databaseURL: "https://grande-815a1-default-rtdb.firebaseio.com",
-  projectId: "grande-815a1",
-  storageBucket: "grande-815a1.firebasestorage.app",
-  messagingSenderId: "921189338159",
-  appId: "1:921189338159:web:1fa991d9e776bc7d228ada",
-  measurementId: "G-NSMKKY2EER"
-};
+      apiKey: "AIzaSyA2Fa08VxXozP-fAYOBJhkzWA-qOL6VYBU",
+      authDomain: "grande-815a1.firebaseapp.com",
+      databaseURL: "https://grande-815a1-default-rtdb.firebaseio.com",
+      projectId: "grande-815a1",
+      storageBucket: "grande-815a1.firebasestorage.app",
+      messagingSenderId: "921189338159",
+      appId: "1:921189338159:web:1fa991d9e776bc7d228ada",
+      measurementId: "G-NSMKKY2EER"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
